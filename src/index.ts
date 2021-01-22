@@ -26,7 +26,7 @@ function startMaster() {
 
   const opts = program.opts();
 
-  require('./master').spawnWorkers({
+  require('./main').spawnWorkers({
     check: opts.listDifferent,
     concurrency: opts.concurrency,
     files: program.args,
