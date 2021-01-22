@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import * as cluster from 'cluster';
+import { Worker } from 'worker_threads';
 import { BehaviorSubject, fromEvent, Observable } from 'rxjs';
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 import {
@@ -24,7 +24,7 @@ export class WorkerExitedError extends Error {
  * Pool of workers.
  */
 export class WorkerPool {
-  private readonly workers: Array<{ worker: Observable<cluster.Worker>; active: number }> = [];
+  private readonly workers: Array<{ worker: Observable<Worker>; active: number }> = [];
   private workIdCounter = 0;
 
   /**
@@ -51,7 +51,7 @@ export class WorkerPool {
 
     return target.worker.pipe(
       switchMap((worker) => {
-        worker.send({ type: MessageType.WorkerFiles, files, id });
+        worker.postMessage({ type: MessageType.WorkerFiles, files, id });
         return fromEvent<[WorkerMessage]>(worker, 'message');
       }),
       map(([m]) => m),
@@ -69,14 +69,14 @@ export class WorkerPool {
   }
 
   private spawnWorker() {
-    const worker = cluster.fork();
+    const worker = new Worker(__filename);
     const subject = new BehaviorSubject(worker);
     this.workers.unshift({ worker: subject, active: 0 });
 
-    worker.on('exit', (code, signal) => subject.error(new WorkerExitedError(code ?? signal)));
+    worker.on('exit', (code) => subject.error(new WorkerExitedError(code)));
     worker.on('error', (err) => subject.error(err));
 
-    worker.send({
+    worker.postMessage({
       mode: this.options.check
         ? WorkerMode.Assert
         : this.options.write
