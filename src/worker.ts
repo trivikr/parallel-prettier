@@ -72,6 +72,7 @@ export function startWorker(): void {
   const files = new Subject<IFilesMessage>();
 
   parentPort?.on('message', (data: MasterMessage) => {
+    console.log(`\nFrom parent to worker: ${JSON.stringify(data, null, 2)}`);
     switch (data.type) {
       case MessageType.WorkerInitialization:
         settings.next(data);
@@ -86,7 +87,10 @@ export function startWorker(): void {
     .pipe(mergeMap(([s, f]) => runFormatting(s, f)))
     .subscribe(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (message) => parentPort?.postMessage(message),
+      (message) => {
+        console.log(`\nFrom worker to parent: ${JSON.stringify(message, null, 2)}`);
+        parentPort?.postMessage(message);
+      },
       (err) => {
         throw err;
       },

@@ -4,7 +4,7 @@
 
 import { Worker } from 'worker_threads';
 import { BehaviorSubject, fromEvent, Observable } from 'rxjs';
-import { filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { filter, /*map,*/ switchMap, take, tap } from 'rxjs/operators';
 import {
   IFormatResults,
   IInitializationMessage,
@@ -52,9 +52,12 @@ export class WorkerPool {
     return target.worker.pipe(
       switchMap((worker) => {
         worker.postMessage({ type: MessageType.WorkerFiles, files, id });
-        return fromEvent<[WorkerMessage]>(worker, 'message');
+        return fromEvent<WorkerMessage>(worker, 'message');
       }),
-      map(([m]) => m),
+      // map(([m]) => {
+      //   console.log(`\nFrom worker to parent: ${JSON.stringify(m, null, 2)}`);
+      //   return m;
+      // }),
       filter((m) => m.id === id),
       take(1),
       tap(() => {
