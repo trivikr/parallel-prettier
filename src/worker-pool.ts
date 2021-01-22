@@ -69,7 +69,7 @@ export class WorkerPool {
   }
 
   private spawnWorker() {
-    const worker = new Worker(__filename);
+    const worker = new Worker('./dist/index.js');
     const subject = new BehaviorSubject(worker);
     this.workers.unshift({ worker: subject, active: 0 });
 
